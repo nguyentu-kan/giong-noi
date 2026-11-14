@@ -19,6 +19,8 @@ textarea{width:100%;min-height:110px;font:inherit;padding:12px;border:2px solid 
 <h1>🎤 Ghi bằng giọng nói</h1>
 <small id="ai">Chưa đăng nhập. Bấm nút đăng nhập bằng mail KAN.</small>
 <div id="dn" style="margin:12px 0"></div>
+<div id="nav" style="display:none;gap:8px;margin:8px 0"><button class="btn" id="tDB" style="margin:0" onclick="tab('db')">📚 Danh bạ</button><button class="btn" id="tGN" style="margin:0;background:#8a97a8" onclick="tab('gn')">🎤 Ghi giọng nói</button></div>
+<div id="db" style="display:none"><input id="tim" placeholder="Tìm sheet, app, dịch vụ..." oninput="veDB()" style="width:100%;font:inherit;padding:12px;border:2px solid #cfd6e0;border-radius:12px;margin-bottom:8px"><div id="dbl"></div></div>
 <div id="app" style="display:none">
 <button id="mic" class="mic" onclick="bat()">🎤</button>
 <small>Bấm micro, nói thong thả, bấm lần nữa để dừng. Ví dụ: "Khách tên Nguyễn Văn An, sinh 2004, ở Nghệ An, số 09xx..., muốn đi Hàn, nguồn TikTok."</small>
@@ -36,21 +38,31 @@ function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp
 function goi(action,du){
   du=du||{};du.action=action;du.token=TOKEN;
   return fetch(API,{method:'POST',body:JSON.stringify(du)}).then(function(r){return r.json()}).then(function(r){
-    if(r&&r.dangNhapLai){TOKEN='';$('app').style.display='none';$('dn').style.display='block';$('ai').textContent='Hết phiên, bấm đăng nhập lại.'}
+    if(r&&r.dangNhapLai){TOKEN='';$('app').style.display='none';$('db').style.display='none';$('nav').style.display='none';$('dn').style.display='block';$('ai').textContent='Hết phiên, bấm đăng nhập lại.'}
     return r});
 }
 function khiDangNhap(rs){
   TOKEN=rs.credential;$('dn').style.display='none';
   goi('thongtin').then(function(t){
     if(t.ok===false){$('ai').textContent=t.loi;$('dn').style.display='block';return}
-    VIEC=t.viec[0];$('app').style.display='block';
-    $('ai').textContent='Xin chào '+t.email+' · Việc: '+VIEC.ten+' · BẢN THỬ (chỉ ghi vào Sheet thử)';
+    VIEC=t.viec[0];$('nav').style.display='flex';
+    $('ai').textContent='Xin chào '+t.email+' · BẢN THỬ';
+    goi('danhba').then(function(r){if(r&&r.ok){DB=r.muc;$('ai').textContent+=r.anDi?(' · '+r.anDi+' mục nhạy cảm đã ẩn'):''}tab('db')});
   }).catch(function(e){$('ai').textContent='Không nối được máy chủ: '+e.message;$('dn').style.display='block'});
 }
 window.onload=function(){var t=setInterval(function(){if(window.google&&google.accounts){clearInterval(t);
   google.accounts.id.initialize({client_id:CLIENT_ID,callback:khiDangNhap,auto_select:true});
   google.accounts.id.renderButton($('dn'),{theme:'filled_blue',size:'large',text:'signin_with',locale:'vi'});
   google.accounts.id.prompt();}},200)};
+var DB=[];
+var TEN={sheet:'📊 Google Sheet',app:'📱 App',dichvu:'💳 Dịch vụ và chi phí'};
+function tab(t){$('db').style.display=t=='db'?'block':'none';$('app').style.display=t=='gn'?'block':'none';
+  $('tDB').style.background=t=='db'?'#1B3A5C':'#8a97a8';$('tGN').style.background=t=='gn'?'#1B3A5C':'#8a97a8';if(t=='db')veDB()}
+function veDB(){var q=($('tim').value||'').toLowerCase(),h='';
+  ['sheet','app','dichvu'].forEach(function(l){var ds=DB.filter(function(m){return m.loai==l&&(m.ten+' '+m.nhom+' '+m.moTa+' '+m.giu).toLowerCase().indexOf(q)>=0});if(!ds.length)return;
+    h+='<h2 style="font-size:17px;color:#1B3A5C;margin:14px 0 4px">'+TEN[l]+' ('+ds.length+')</h2>';
+    ds.forEach(function(m){h+='<div class="the"><b>'+esc(m.ten)+'</b> <small>· '+esc(m.nhom)+(m.nhayCam?' · 🔒 nhạy cảm':'')+'</small><div style="font-size:15px;margin:4px 0">'+esc(m.moTa)+'</div><small>Ai giữ: '+esc(m.giu)+(m.ghiChu?' · '+esc(m.ghiChu):'')+'</small><a href="'+esc(m.link)+'" target="_blank" rel="noopener" class="btn" style="display:block;text-align:center;text-decoration:none;font-size:16px;padding:12px">Mở</a></div>'})});
+  $('dbl').innerHTML=h||'<div class="loi">Không thấy mục nào.</div>'}
 function bat(){
   var C=window.SpeechRecognition||window.webkitSpeechRecognition;
   if(!C){$('kq').innerHTML='<div class="loi">Trình duyệt này chưa hỗ trợ ghi âm. Dùng Safari (iPhone) hoặc Chrome (Android), hoặc bấm micro trên bàn phím điện thoại.</div>';return}
