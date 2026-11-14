@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="vi"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>KAN - Ghi bằng giọng nói</title>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<style>
+:root{--xanh:#1B3A5C;--do:#c0392b;--nen:#f4f6f9}
+*{box-sizing:border-box}body{margin:0;font:18px/1.4 system-ui,sans-serif;background:var(--nen);color:#222;padding:16px;max-width:640px;margin:auto}
+h1{font-size:20px;margin:0 0 4px;color:var(--xanh)}small{color:#666}
+.mic{display:block;width:140px;height:140px;border-radius:50%;border:0;margin:20px auto;font-size:56px;background:var(--xanh);color:#fff}
+.mic.on{background:var(--do);animation:p 1s infinite}@keyframes p{50%{transform:scale(1.07)}}
+textarea{width:100%;min-height:110px;font:inherit;padding:12px;border:2px solid #cfd6e0;border-radius:12px}
+.btn{width:100%;padding:16px;font-size:19px;font-weight:700;border:0;border-radius:12px;background:var(--xanh);color:#fff;margin-top:10px}
+.btn:disabled{opacity:.5}
+.the{background:#fff;border-radius:12px;padding:12px;margin-top:12px;border:2px solid #cfd6e0}
+.the label{display:block;font-size:14px;color:#555;margin-top:8px}.the input{width:100%;font:inherit;padding:10px;border:1px solid #cfd6e0;border-radius:8px}
+.loi{background:#fde8e6;color:#8a1c12;padding:12px;border-radius:12px;margin-top:12px}.ok{background:#e4f6e9;color:#1d6b34;padding:12px;border-radius:12px;margin-top:12px;font-weight:700}
+</style></head><body>
+<h1>🎤 Ghi bằng giọng nói</h1>
+<small id="ai">Chưa đăng nhập. Bấm nút đăng nhập bằng mail KAN.</small>
+<div id="dn" style="margin:12px 0"></div>
+<div id="app" style="display:none">
+<button id="mic" class="mic" onclick="bat()">🎤</button>
+<small>Bấm micro, nói thong thả, bấm lần nữa để dừng. Ví dụ: "Khách tên Nguyễn Văn An, sinh 2004, ở Nghệ An, số 09xx..., muốn đi Hàn, nguồn TikTok."</small>
+<textarea id="text" placeholder="Lời nói hiện ở đây, có thể sửa bằng tay"></textarea>
+<button class="btn" id="doc" onclick="doc()">🤖 Đọc giúp tôi</button>
+<div id="ds"></div>
+<button class="btn" id="luu" style="display:none" onclick="luu()">✅ Đúng rồi, Lưu</button>
+<div id="kq"></div>
+</div>
+<script>
+var API='https://script.google.com/macros/s/AKfycbzktwdqmtQmtxcCyiyJv1W3yC7guu1oOWAZjd5odpsR8madA5WdTL6wpqvhJ-LbOpV8_Q/exec',CLIENT_ID='325532006143-le25706b89vlimu4uq4g1qau67o024dg.apps.googleusercontent.com',TOKEN='';
+var VIEC=null,HANG=[],rec=null,dang=false;
+function $(i){return document.getElementById(i)}
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+function goi(action,du){
+  du=du||{};du.action=action;du.token=TOKEN;
+  return fetch(API,{method:'POST',body:JSON.stringify(du)}).then(function(r){return r.json()}).then(function(r){
+    if(r&&r.dangNhapLai){TOKEN='';$('app').style.display='none';$('dn').style.display='block';$('ai').textContent='Hết phiên, bấm đăng nhập lại.'}
+    return r});
+}
+function khiDangNhap(rs){
+  TOKEN=rs.credential;$('dn').style.display='none';
+  goi('thongtin').then(function(t){
+    if(t.ok===false){$('ai').textContent=t.loi;$('dn').style.display='block';return}
+    VIEC=t.viec[0];$('app').style.display='block';
+    $('ai').textContent='Xin chào '+t.email+' · Việc: '+VIEC.ten+' · BẢN THỬ (chỉ ghi vào Sheet thử)';
+  }).catch(function(e){$('ai').textContent='Không nối được máy chủ: '+e.message;$('dn').style.display='block'});
+}
+window.onload=function(){var t=setInterval(function(){if(window.google&&google.accounts){clearInterval(t);
+  google.accounts.id.initialize({client_id:CLIENT_ID,callback:khiDangNhap,auto_select:true});
+  google.accounts.id.renderButton($('dn'),{theme:'filled_blue',size:'large',text:'signin_with',locale:'vi'});
+  google.accounts.id.prompt();}},200)};
+function bat(){
+  var C=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!C){$('kq').innerHTML='<div class="loi">Trình duyệt này chưa hỗ trợ ghi âm. Dùng Safari (iPhone) hoặc Chrome (Android), hoặc bấm micro trên bàn phím điện thoại.</div>';return}
+  if(dang){rec.stop();return}
+  rec=new C();rec.lang='vi-VN';rec.interimResults=true;rec.continuous=true;
+  var goc=$('text').value?($('text').value+' '):'';
+  rec.onresult=function(e){var s='';for(var i=0;i<e.results.length;i++)s+=e.results[i][0].transcript;$('text').value=goc+s};
+  rec.onend=function(){dang=false;$('mic').classList.remove('on')};
+  rec.onerror=function(e){dang=false;$('mic').classList.remove('on');
+    var m={'not-allowed':'Micro chưa được cho phép. Vào cài đặt trình duyệt, cho phép micro cho trang này rồi bấm lại. Hoặc dùng micro trên bàn phím điện thoại.','service-not-allowed':'Trình duyệt không cho dùng nhận giọng nói. Dùng micro trên bàn phím điện thoại.','no-speech':'Chưa nghe thấy tiếng. Bấm micro và nói lại.','audio-capture':'Không tìm thấy micro.','network':'Mất mạng khi nhận giọng nói.'};
+    $('kq').innerHTML='<div class="loi">'+((m[e.error])||('Lỗi micro: '+e.error))+'</div>'};
+  try{rec.start();dang=true;$('mic').classList.add('on');$('kq').innerHTML=''}catch(x){$('kq').innerHTML='<div class="loi">Không bật được micro: '+esc(x.message)+'. Dùng micro trên bàn phím điện thoại.</div>'}
+}
+function doc(){
+  $('kq').innerHTML='';$('luu').style.display='none';$('doc').disabled=true;$('doc').textContent='Đang đọc...';
+  goi('phantich',{viec:'data_khach',text:$('text').value}).then(function(r){
+    $('doc').disabled=false;$('doc').textContent='🤖 Đọc giúp tôi';
+    if(!r.ok){$('kq').innerHTML='<div class="loi">'+esc(r.loi)+'</div>';return}
+    HANG=r.hang;ve();
+  }).catch(function(e){$('doc').disabled=false;$('doc').textContent='🤖 Đọc giúp tôi';$('kq').innerHTML='<div class="loi">'+esc(e.message)+'</div>'});
+}
+function ve(){
+  var h='';HANG.forEach(function(r,i){h+='<div class="the"><b>Khách '+(i+1)+'</b>';VIEC.cot.forEach(function(c){h+='<label>'+c.ten+'</label><input value="'+esc(r[c.k])+'" onchange="HANG['+i+'].'+c.k+'=this.value">'});h+='</div>'});
+  $('ds').innerHTML=h||'<div class="loi">Không tách được khách nào. Nói rõ hơn.</div>';$('luu').style.display=HANG.length?'block':'none';
+}
+function luu(){
+  $('luu').disabled=true;
+  goi('luu',{viec:'data_khach',hang:HANG}).then(function(r){$('luu').disabled=false;
+    if(r.ok){$('kq').innerHTML='<div class="ok">Đã lưu '+r.so+' dòng.</div>';$('text').value='';$('ds').innerHTML='';$('luu').style.display='none';HANG=[]}
+    else $('kq').innerHTML='<div class="loi">'+esc(r.loi)+'</div>'
+  }).catch(function(e){$('luu').disabled=false;$('kq').innerHTML='<div class="loi">'+esc(e.message)+'</div>'});
+}
+</script></body></html>
