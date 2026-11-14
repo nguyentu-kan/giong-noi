@@ -19,7 +19,7 @@ textarea{width:100%;min-height:110px;font:inherit;padding:12px;border:2px solid 
 <h1>🎤 Ghi bằng giọng nói</h1>
 <small id="ai">Chưa đăng nhập. Bấm nút đăng nhập bằng mail KAN.</small>
 <div id="dn" style="margin:12px 0"></div>
-<div id="nav" style="display:none;gap:8px;margin:8px 0"><button class="btn" id="tDB" style="margin:0" onclick="tab('db')">📚 Danh bạ</button><button class="btn" id="tGN" style="margin:0;background:#8a97a8" onclick="tab('gn')">🎤 Ghi giọng nói</button></div>
+<div id="nav" style="display:none;gap:8px;margin:0 -16px;padding:8px 16px;position:sticky;top:0;z-index:5;background:#f4f6f9;box-shadow:0 2px 6px rgba(0,0,0,.12)"><button class="btn" id="tDB" style="margin:0" onclick="tab('db')">📚 Danh bạ</button><button class="btn" id="tGN" style="margin:0;background:#8a97a8" onclick="tab('gn')">🎤 Ghi giọng nói</button></div>
 <div id="db" style="display:none"><input id="tim" placeholder="Tìm sheet, app, dịch vụ..." oninput="veDB()" style="width:100%;font:inherit;padding:12px;border:2px solid #cfd6e0;border-radius:12px;margin-bottom:8px"><div id="dbl"></div></div>
 <div id="app" style="display:none">
 <button id="mic" class="mic" onclick="bat()">🎤</button>
