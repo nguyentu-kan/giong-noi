@@ -22,7 +22,8 @@ textarea{width:100%;min-height:110px;font:inherit;padding:12px;border:2px solid 
 <h1>🎤 Ghi bằng giọng nói</h1>
 <small id="ai">Chưa đăng nhập. Bấm nút đăng nhập bằng mail KAN.</small>
 <div id="dn" style="margin:12px 0"></div>
-<div id="nav" style="display:none;gap:8px;margin:0 -16px;padding:8px 16px;position:sticky;top:0;z-index:5;background:#f4f6f9;box-shadow:0 2px 6px rgba(0,0,0,.12)"><button class="btn" id="tDB" style="margin:0" onclick="tab('db')">📚 Danh bạ</button><button class="btn" id="tGN" style="margin:0;background:#8a97a8" onclick="tab('gn')">🎤 Ghi giọng nói</button></div>
+<div id="nav" style="display:none;gap:8px;margin:0 -16px;padding:8px 16px;position:sticky;top:0;z-index:5;background:#f4f6f9;box-shadow:0 2px 6px rgba(0,0,0,.12)"><button class="btn" id="tTQ" style="margin:0;padding:12px 6px;font-size:16px" onclick="tab('tq')">📊 Tổng quan</button><button class="btn" id="tDB" style="margin:0;padding:12px 6px;font-size:16px" onclick="tab('db')">📚 Danh bạ</button><button class="btn" id="tGN" style="margin:0;padding:12px 6px;font-size:16px;background:#8a97a8" onclick="tab('gn')">🎤 Ghi giọng</button></div>
+<div id="tq" style="display:none"><div id="tql">Đang tải số liệu...</div></div>
 <div id="db" style="display:none"><input id="tim" placeholder="Tìm sheet, app, dịch vụ..." oninput="veDB()" style="width:100%;font:inherit;padding:12px;border:2px solid #cfd6e0;border-radius:12px;margin-bottom:8px"><div id="dbl"></div></div>
 <div id="app" style="display:none">
 <button id="mic" class="mic" onclick="bat()">🎤</button>
@@ -50,7 +51,8 @@ function khiDangNhap(rs){
     if(t.ok===false){$('ai').textContent=t.loi;$('dn').style.display='block';return}
     VIEC=t.viec[0];$('nav').style.display='flex';
     $('ai').textContent='Xin chào '+t.email+' · BẢN THỬ';
-    goi('danhba').then(function(r){if(r&&r.ok){DB=r.muc;$('ai').textContent+=r.anDi?(' · '+r.anDi+' mục nhạy cảm đã ẩn'):''}tab('db')});
+    goi('danhba').then(function(r){if(r&&r.ok){DB=r.muc;$('ai').textContent+=r.anDi?(' · '+r.anDi+' mục nhạy cảm đã ẩn'):''}});
+    tab('tq');goi('tongquan').then(function(r){TQ=r;veTQ()}).catch(function(e){$('tql').innerHTML='<div class="loi">'+esc(e.message)+'</div>'});
   }).catch(function(e){$('ai').textContent='Không nối được máy chủ: '+e.message;$('dn').style.display='block'});
 }
 window.onload=function(){var t=setInterval(function(){if(window.google&&google.accounts){clearInterval(t);
@@ -59,8 +61,17 @@ window.onload=function(){var t=setInterval(function(){if(window.google&&google.a
   google.accounts.id.prompt();}},200)};
 var DB=[];
 var TEN={sheet:'📊 Google Sheet',app:'📱 App',dichvu:'💳 Dịch vụ và chi phí'};
-function tab(t){$('db').style.display=t=='db'?'block':'none';$('app').style.display=t=='gn'?'block':'none';
-  $('tDB').style.background=t=='db'?'#1B3A5C':'#8a97a8';$('tGN').style.background=t=='gn'?'#1B3A5C':'#8a97a8';if(t=='db')veDB()}
+var TQ=null;
+function tab(t){$('tq').style.display=t=='tq'?'block':'none';$('db').style.display=t=='db'?'block':'none';$('app').style.display=t=='gn'?'block':'none';
+  ['tq','db','gn'].forEach(function(x){var b=$('t'+x.toUpperCase());b.style.background=t==x?'#1B3A5C':'#8a97a8'});if(t=='db')veDB();if(t=='tq')veTQ()}
+function veTQ(){if(!TQ){return}if(!TQ.ok){$('tql').innerHTML='<div class="loi">'+esc(TQ.loi||'Lỗi')+'</div>';return}
+  var h='';TQ.khoi.forEach(function(k){h+='<h2 style="font-size:18px;color:#1B3A5C;margin:16px 0 6px">'+esc(k.ten)+(k.capNhat?' <small>· cập nhật '+esc(k.capNhat)+'</small>':'')+'</h2>';
+    if(k.loi){h+='<div class="loi">'+esc(k.loi)+'</div>';return}
+    if(k.canXuLy)h+='<div style="background:#fff4e0;color:#8a5a00;padding:10px;border-radius:10px;font-size:15px;margin-bottom:8px">⚠️ '+esc(k.canXuLy)+'</div>';
+    h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">';
+    k.so.forEach(function(x){h+='<div class="the" style="margin:0;text-align:center"><div style="font-size:13px;color:#555">'+esc(x.nhan)+(x.nhay?' 🔒':'')+'</div><div style="font-size:26px;font-weight:700;color:#1B3A5C;word-break:break-word">'+esc(x.gt||'-')+'</div>'+(x.phu?'<div style="font-size:12px;color:#777">'+esc(x.phu)+'</div>':'')+'</div>'});
+    h+='</div>';if(k.buoc&&k.buoc.length)h+='<div class="the" style="font-size:15px"><b>Theo bước:</b><br>'+k.buoc.map(esc).join('<br>')+'</div>'});
+  $('tql').innerHTML=h}
 function veDB(){var q=($('tim').value||'').toLowerCase(),h='';
   ['sheet','app','dichvu'].forEach(function(l){var ds=DB.filter(function(m){return m.loai==l&&(m.ten+' '+m.nhom+' '+m.moTa+' '+m.giu).toLowerCase().indexOf(q)>=0}).sort(function(a,b){return (b.dangDung||0)-(a.dangDung||0)});if(!ds.length)return;
     h+='<h2 style="font-size:17px;color:#1B3A5C;margin:14px 0 4px">'+TEN[l]+' ('+ds.length+')</h2>';
