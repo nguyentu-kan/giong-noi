@@ -51,7 +51,7 @@ function khiDangNhap(rs){
     VIEC=t.viec[0];$('nav').style.display='flex';
     $('ai').textContent='Xin chào '+t.email+' · BẢN THỬ';
     goi('danhba').then(function(r){if(r&&r.ok){DB=r.muc;$('ai').textContent+=r.anDi?(' · '+r.anDi+' mục nhạy cảm đã ẩn'):''}});
-    goi('chiphi').then(function(r){if(r&&r.ok){CP=r.muc;$('tCP').style.display='block'}});
+    goi('chiphi').then(function(r){if(r&&r.ok){CP=r.muc;TK=r.taiKhoan||[];$('tCP').style.display='block'}});
     tab('tq');goi('tongquan').then(function(r){TQ=r;veTQ()}).catch(function(e){$('tql').innerHTML='<div class="loi">'+esc(e.message)+'</div>'});
   }).catch(function(e){$('ai').textContent='Không nối được máy chủ: '+e.message;$('dn').style.display='block'});
 }
@@ -61,15 +61,16 @@ window.onload=function(){var t=setInterval(function(){if(window.google&&google.a
   google.accounts.id.prompt();}},200)};
 var DB=[];
 var TEN={sheet:'📊 Google Sheet',app:'📱 App',dichvu:'💳 Dịch vụ và chi phí',quantri:'🔧 Quản trị app (chỉ người quản trị)'};
-var TQ=null,CP=[];
+var TQ=null,CP=[],TK=[];
 function tab(t){$('tq').style.display=t=='tq'?'block':'none';$('cp').style.display=t=='cp'?'block':'none';$('db').style.display=t=='db'?'block':'none';$('app').style.display=t=='gn'?'block':'none';
   ['tq','db','cp','gn'].forEach(function(x){var b=$('t'+x.toUpperCase());b.style.background=t==x?'#1B3A5C':'#8a97a8'});if(t=='db')veDB();if(t=='cp')veCP();if(t=='tq')veTQ()}
 function veCP(){var h='<h2 style="font-size:18px;color:#1B3A5C;margin:14px 0 4px">Chi phí và nạp tiền</h2><small>Nhập tay, ghi ngày cập nhật. Không có mật khẩu hay số thẻ ở đây.</small>';
+  h+='<div class="the" style="background:#eef3f9"><b>📧 Ba mail đang dùng, mail nào làm gì</b>'+TK.map(function(t){return '<div style="margin-top:8px;font-size:15px"><b>'+esc(t.mail)+'</b><br>'+esc(t.vaiTro)+'<br><small>'+esc(t.luuY)+'</small></div>'}).join('')+'</div>';
   CP.forEach(function(m){h+='<div class="the"><b>'+esc(m.ten)+'</b> <small>· '+esc(m.nhom)+'</small>'
     +'<div style="font-size:22px;font-weight:700;color:#1B3A5C;margin:6px 0">'+esc(m.soDu)+'</div>'
     +'<div style="font-size:15px">'+esc(m.dung)+'</div>'
     +(m.canhBao?'<div style="background:#fff4e0;color:#8a5a00;padding:8px 10px;border-radius:10px;font-size:15px;margin:6px 0">⚠️ '+esc(m.canhBao)+'</div>':'')
-    +'<small>Ai nạp: '+esc(m.giu)+(m.ngay?' · cập nhật '+esc(m.ngay):'')+(m.ghiChu?' · '+esc(m.ghiChu):'')+'</small>'
+    +'<div style="font-size:14px;margin-top:4px">📧 Tài khoản: <b>'+esc(m.taiKhoan||'chưa rõ')+'</b></div><small>Ai nạp: '+esc(m.giu)+(m.ngay?' · cập nhật '+esc(m.ngay):'')+(m.ghiChu?' · '+esc(m.ghiChu):'')+'</small>'
     +(m.huongDan?'<details style="margin-top:6px"><summary style="font-size:15px;color:#1B3A5C;font-weight:700">Hướng dẫn xem số dư và nạp tiền</summary><div style="font-size:15px;white-space:pre-line;margin-top:4px">'+esc(m.huongDan)+'</div></details>':'')
     +'<div style="display:flex;gap:8px;margin-top:8px">'+(m.linkXem?'<a href="'+esc(m.linkXem)+'" class="btn" style="flex:1;text-align:center;text-decoration:none;font-size:15px;padding:12px;margin:0">Xem số dư</a>':'')+(m.linkNap&&m.linkNap!=m.linkXem?'<a href="'+esc(m.linkNap)+'" class="btn" style="flex:1;text-align:center;text-decoration:none;font-size:15px;padding:12px;margin:0;background:#1d6b34">Nạp tiền</a>':'')+'</div></div>'});
   $('cpl').innerHTML=h}
@@ -86,7 +87,7 @@ function veTQ(){if(!TQ){return}if(!TQ.ok){$('tql').innerHTML='<div class="loi">'
 function veDB(){var q=($('tim').value||'').toLowerCase(),h='';
   ['sheet','app','dichvu','quantri'].forEach(function(l){var ds=DB.filter(function(m){return m.loai==l&&(m.ten+' '+m.nhom+' '+m.moTa+' '+m.giu).toLowerCase().indexOf(q)>=0}).sort(function(a,b){return (b.dangDung||0)-(a.dangDung||0)});if(!ds.length)return;
     h+='<h2 style="font-size:17px;color:#1B3A5C;margin:14px 0 4px">'+TEN[l]+' ('+ds.length+')</h2>';
-    ds.forEach(function(m){h+='<div class="the"><b>'+esc(m.ten)+'</b> <small>· '+esc(m.nhom)+(m.nhayCam?' · 🔒 nhạy cảm':'')+'</small><div style="font-size:15px;margin:4px 0">'+esc(m.moTa)+'</div><small>Ai giữ: '+esc(m.giu)+(m.ghiChu?' · '+esc(m.ghiChu):'')+'</small>'+(m.huongDan?'<details style="margin-top:6px"><summary style="font-size:15px;color:#1B3A5C;font-weight:700">Hướng dẫn cụ thể</summary><div style="font-size:15px;white-space:pre-line;margin-top:4px">'+esc(m.huongDan)+'</div></details>':'')+'<a href="'+esc(m.link)+'" class="btn" style="display:block;text-align:center;text-decoration:none;font-size:16px;padding:12px">Mở</a></div>'})});
+    ds.forEach(function(m){h+='<div class="the"><b>'+esc(m.ten)+'</b> <small>· '+esc(m.nhom)+(m.nhayCam?' · 🔒 nhạy cảm':'')+'</small><div style="font-size:15px;margin:4px 0">'+esc(m.moTa)+'</div>'+(m.taiKhoan?'<div style="font-size:14px">📧 <b>'+esc(m.taiKhoan)+'</b></div>':'')+'<small>Ai giữ: '+esc(m.giu)+(m.ghiChu?' · '+esc(m.ghiChu):'')+'</small>'+(m.huongDan?'<details style="margin-top:6px"><summary style="font-size:15px;color:#1B3A5C;font-weight:700">Hướng dẫn cụ thể</summary><div style="font-size:15px;white-space:pre-line;margin-top:4px">'+esc(m.huongDan)+'</div></details>':'')+'<a href="'+esc(m.link)+'" class="btn" style="display:block;text-align:center;text-decoration:none;font-size:16px;padding:12px">Mở</a></div>'})});
   $('dbl').innerHTML=h||'<div class="loi">Không thấy mục nào.</div>'}
 function bat(){
   var C=window.SpeechRecognition||window.webkitSpeechRecognition;
