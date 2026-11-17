@@ -70,7 +70,7 @@ function veTQ(){if(!TQ){return}if(!TQ.ok){$('tql').innerHTML='<div class="loi">'
     if(k.canXuLy)h+='<div style="background:#fff4e0;color:#8a5a00;padding:10px;border-radius:10px;font-size:15px;margin-bottom:8px">⚠️ '+esc(k.canXuLy)+'</div>';
     h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">';
     k.so.forEach(function(x){h+='<div class="the" style="margin:0;text-align:center"><div style="font-size:13px;color:#555">'+esc(x.nhan)+(x.nhay?' 🔒':'')+'</div><div style="font-size:26px;font-weight:700;color:#1B3A5C;word-break:break-word">'+esc(x.gt||'-')+'</div>'+(x.phu?'<div style="font-size:12px;color:#777">'+esc(x.phu)+'</div>':'')+'</div>'});
-    h+='</div>';if(k.buoc&&k.buoc.length)h+='<div class="the" style="font-size:15px"><b>Theo bước:</b><br>'+k.buoc.map(esc).join('<br>')+'</div>'});
+    h+='</div>';if(k.buoc&&k.buoc.length)h+='<div class="the" style="font-size:15px"><b>'+esc(k.buocTen||'Theo bước')+':</b><br>'+k.buoc.map(esc).join('<br>')+'</div>'});
   $('tql').innerHTML=h}
 function veDB(){var q=($('tim').value||'').toLowerCase(),h='';
   ['sheet','app','dichvu','quantri'].forEach(function(l){var ds=DB.filter(function(m){return m.loai==l&&(m.ten+' '+m.nhom+' '+m.moTa+' '+m.giu).toLowerCase().indexOf(q)>=0}).sort(function(a,b){return (b.dangDung||0)-(a.dangDung||0)});if(!ds.length)return;
