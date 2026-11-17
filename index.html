@@ -19,6 +19,7 @@ textarea{width:100%;min-height:110px;font:inherit;padding:12px;border:2px solid 
 </style></head><body>
 <h1>🎤 Ghi bằng giọng nói</h1>
 <small id="ai">Chưa đăng nhập. Bấm nút đăng nhập bằng mail KAN.</small>
+<button id="dx" onclick="dangXuat()" style="display:none;font:inherit;font-size:13px;padding:3px 10px;margin-left:6px">Đăng xuất</button>
 <div id="dn" style="margin:12px 0"></div>
 <div id="nav" style="display:none;flex-wrap:wrap;gap:8px;margin:0 -16px;padding:8px 16px;position:sticky;top:0;z-index:5;background:#f4f6f9;box-shadow:0 2px 6px rgba(0,0,0,.12)"><button class="btn" id="tTQ" style="margin:0;padding:12px 6px;font-size:16px" onclick="tab('tq')">📊 Tổng quan</button><button class="btn" id="tDB" style="margin:0;padding:12px 6px;font-size:16px" onclick="tab('db')">📚 Danh bạ</button><button class="btn" id="tCP" style="margin:0;padding:12px 6px;font-size:16px;background:#8a97a8;display:none" onclick="tab('cp')">💳 Chi phí</button><button class="btn" id="tGN" style="margin:0;padding:12px 6px;font-size:16px;background:#8a97a8" onclick="tab('gn')">🎤 Ghi giọng</button></div>
 <div id="tq" style="display:none"><div id="tql">Đang tải số liệu...</div></div>
@@ -41,24 +42,35 @@ function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp
 function goi(action,du){
   du=du||{};du.action=action;du.token=TOKEN;
   return fetch(API,{method:'POST',body:JSON.stringify(du)}).then(function(r){return r.json()}).then(function(r){
-    if(r&&r.dangNhapLai){TOKEN='';$('app').style.display='none';$('db').style.display='none';$('nav').style.display='none';$('dn').style.display='block';$('ai').textContent='Hết phiên, bấm đăng nhập lại.'}
+    if(r&&r.dangNhapLai){TOKEN='';try{localStorage.removeItem('kan_phien')}catch(e){}$('app').style.display='none';$('db').style.display='none';$('tq').style.display='none';$('cp').style.display='none';$('nav').style.display='none';$('dx').style.display='none';$('dn').style.display='block';$('ai').textContent='Hết phiên, bấm đăng nhập lại.'}
     return r});
 }
 function khiDangNhap(rs){
+  // Vừa đăng nhập Google: đổi lấy phiên 30 ngày để lần sau vào thẳng.
   TOKEN=rs.credential;$('dn').style.display='none';
+  goi('dangnhap').then(function(r){
+    if(r&&r.ok&&r.phien){try{localStorage.setItem('kan_phien',r.phien)}catch(e){}TOKEN=r.phien;vaoApp()}
+    else{$('ai').textContent=(r&&r.loi)||'Đăng nhập không được.';$('dn').style.display='block'}
+  }).catch(function(e){$('ai').textContent='Không nối được máy chủ: '+e.message;$('dn').style.display='block'});
+}
+function vaoApp(){
   goi('thongtin').then(function(t){
     if(t.ok===false){$('ai').textContent=t.loi;$('dn').style.display='block';return}
-    VIEC=t.viec[0];$('nav').style.display='flex';
+    VIEC=t.viec[0];$('nav').style.display='flex';$('dx').style.display='inline';
     $('ai').textContent='Xin chào '+t.email+' · BẢN THỬ';
     goi('danhba').then(function(r){if(r&&r.ok){DB=r.muc;$('ai').textContent+=r.anDi?(' · '+r.anDi+' mục nhạy cảm đã ẩn'):''}});
     goi('chiphi').then(function(r){if(r&&r.ok){CP=r.muc;TK=r.taiKhoan||[];$('tCP').style.display='block'}});
     tab('tq');goi('tongquan').then(function(r){TQ=r;veTQ()}).catch(function(e){$('tql').innerHTML='<div class="loi">'+esc(e.message)+'</div>'});
   }).catch(function(e){$('ai').textContent='Không nối được máy chủ: '+e.message;$('dn').style.display='block'});
 }
-window.onload=function(){var t=setInterval(function(){if(window.google&&google.accounts){clearInterval(t);
+function dangXuat(){try{localStorage.removeItem('kan_phien')}catch(e){}TOKEN='';location.reload()}
+window.onload=function(){
+  var ss='';try{ss=localStorage.getItem('kan_phien')||''}catch(e){}
+  if(ss){TOKEN=ss;$('dn').style.display='none';$('ai').textContent='Đang vào...';vaoApp()}
+  var t=setInterval(function(){if(window.google&&google.accounts){clearInterval(t);
   google.accounts.id.initialize({client_id:CLIENT_ID,callback:khiDangNhap,auto_select:true});
   google.accounts.id.renderButton($('dn'),{theme:'filled_blue',size:'large',text:'signin_with',locale:'vi'});
-  google.accounts.id.prompt();}},200)};
+  if(!ss)google.accounts.id.prompt();}},200)};
 var DB=[];
 var TEN={sheet:'📊 Google Sheet',app:'📱 App',dichvu:'💳 Dịch vụ và chi phí',quantri:'🔧 Quản trị app (chỉ người quản trị)'};
 var TQ=null,CP=[],TK=[];
